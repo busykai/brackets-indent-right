@@ -175,7 +175,7 @@ define(function (require, exports, module) {
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent;
-        if (!doc) {
+        if (!doc || doc.getLanguage !== "javascript") {
             return;
         }
         if ((indent = sniff(doc))) {
