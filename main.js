@@ -21,7 +21,8 @@ define(function (require, exports, module) {
         
         
     /**
-     * Detects the indentation type used in the file. Samples MIn
+     * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
+     * Indentation at the global scope is ignored.
      */
     function sniff(doc) {
         var text = doc.getText(),
@@ -129,7 +130,6 @@ define(function (require, exports, module) {
                 } else {
                     map[key].samples++;
                 }
-                console.warn("Line " + lineNo + " result is " + key);
                 spaceCount = 0;
             }
             i++;
@@ -137,6 +137,8 @@ define(function (require, exports, module) {
                 break;
             }
         } /* while */
+        
+        /* analyze the results. */
         for (var k in map) {
             if (map[k].samples > samples * 0.7) {
                 return map[k];
@@ -146,7 +148,8 @@ define(function (require, exports, module) {
     }
     
     /**
-     * 
+     * Sets the Brackets indentation settings. Since there's no API to do that, it emulates user action to
+     * accomplish the purpose.
      */
     function set(indent) {
         var $indentType,
@@ -172,10 +175,13 @@ define(function (require, exports, module) {
         
     }
     
+    /**
+     * Runs the analysis under proper conditions.
+     */
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent;
-        if (!doc || doc.getLanguage !== "javascript") {
+        if (!doc || doc.getLanguage().getName() !== "JavaScript") {
             return;
         }
         if ((indent = sniff(doc))) {
@@ -192,4 +198,5 @@ define(function (require, exports, module) {
                 run();
             });
     });
+    
 });
