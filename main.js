@@ -71,10 +71,6 @@ define(function (require, exports, module) {
                     newLine = true;
                     if (spaceCount > 0) {
                         spaceCount = 0;
-                    } else {
-                        if (!inBlockComment && !inExpression && nestLevel) {
-                            samples++;
-                        }
                     }
                     break;
                 case '{':
@@ -101,7 +97,7 @@ define(function (require, exports, module) {
                     }
                     break;
                 default:
-                    if (!inExpression) {
+                    if (!inExpression && !inBlockComment && !inLineComment) {
                         inExpression = true;
                     }
                     break;
@@ -110,6 +106,8 @@ define(function (require, exports, module) {
                 var spacePerIndent = (nestLevel) ? Math.floor(spaceCount / nestLevel) : spaceCount,
                     key,
                     indentCharName;
+                
+                samples++;
 
                 if (prevc === " ") {
                     indentCharName = "space";
@@ -177,6 +175,9 @@ define(function (require, exports, module) {
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent;
+        if (!doc) {
+            return;
+        }
         if ((indent = sniff(doc))) {
             set(indent);
         }
