@@ -17,7 +17,8 @@ define(function (require, exports, module) {
     
         /* IDs of the status bar elements. */
         INDENT_TYPE             = "indent-type",
-        INDENT_WIDTH            = "indent-width-input";
+        INDENT_WIDTH            = "indent-width-input",
+        INDENT_WIDTH_LABEL      = "indent-width-label";
         
         
     /**
@@ -153,10 +154,12 @@ define(function (require, exports, module) {
      */
     function set(indent) {
         var $indentType,
-            $indentWidth;
+            $indentWidth,
+            $indentWidthLabel;
         
         $indentType     = $("#" + INDENT_TYPE);
         $indentWidth    = $("#" + INDENT_WIDTH);
+        $indentWidthLabel = $("#" + INDENT_WIDTH_LABEL); 
         
         if ($indentType.text() === Strings.STATUSBAR_SPACES) {
             if (indent.char === '\t') {
@@ -169,8 +172,12 @@ define(function (require, exports, module) {
         }
         
         if (indent.char === ' ') {
-            $indentWidth.val(indent.indent);
-            $indentWidth.trigger("blur");
+            $indentWidth.on("focus.indent-right", function(e) {
+                $indentWidth.val(indent.indent);
+                $indentWidth.blur();
+                $indentWidth.off("focus.indent-right");
+            });
+            $indentWidthLabel.trigger("click");
         }
         
     }
