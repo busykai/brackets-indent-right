@@ -150,9 +150,7 @@ define(function (require, exports, module) {
                 }
                 
                 /* got ourselves a sample */
-                if (effectiveScope === 0 || spacePerIndent === 0) {
-                } else {
-
+                if (effectiveScope > 0 && spacePerIndent > 0) {
                     samples++;
                     if (prevc === " ") {
                         indentCharName = "space";
@@ -160,7 +158,7 @@ define(function (require, exports, module) {
                         indentCharName = "tab";
                     } else {
                         // this is an error condition
-                        console.log("Parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
+                        console.error("Parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
                     }
                     
                     key = indentCharName + spacePerIndent;
@@ -174,8 +172,6 @@ define(function (require, exports, module) {
                     } else {
                         map[key].samples++;
                     }
-                    // DEBUG
-                    //console.log("Line " + lineNo + ": indent " + spacePerIndent + " " + indentCharName + "s" + "(scope " + nestLevel + ", " + effectiveScope + ")");
                     spaceCount = 0;
                     prevIndent = map[key];
                 }
