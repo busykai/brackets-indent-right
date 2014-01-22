@@ -13,7 +13,7 @@
     "regexp"        : true,
     "undef"         : true,
     "strict"        : true,
-    "trailing"      : false,    
+    "trailing"      : false,
     "asi"           : false,
     "boss"          : false,
     "debug"         : false,
@@ -62,10 +62,8 @@
     ],
     "indent"        : 4,
     "globals"       : {
-        "require": false,
         "define": false,
         "brackets": false,
-        "$": false,
-        "window": false
+        "$": false
     }
 }
