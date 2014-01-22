@@ -10,6 +10,7 @@ define(function (require, exports, module) {
         Document                = brackets.getModule("document/Document"),
         DocumentManager         = brackets.getModule("document/DocumentManager"),
         EditorManager           = brackets.getModule("editor/EditorManager"),
+        PerfUtils               = brackets.getModule("utils/PerfUtils"),
         Strings                 = brackets.getModule("strings"),
         
         /* Number of lines to be sampled. Only code lines will be sampled. */
@@ -47,6 +48,8 @@ define(function (require, exports, module) {
         
         // settings
         var leaveDefaultIfNotCertain = true;
+        
+        var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
         
         while (true) {
             prevc = currc;
@@ -172,7 +175,7 @@ define(function (require, exports, module) {
                         map[key].samples++;
                     }
                     // DEBUG
-                    console.log("Line " + lineNo + ": indent " + spacePerIndent + " " + indentCharName + "s" + "(scope " + nestLevel + ", " + effectiveScope + ")");
+                    //console.log("Line " + lineNo + ": indent " + spacePerIndent + " " + indentCharName + "s" + "(scope " + nestLevel + ", " + effectiveScope + ")");
                     spaceCount = 0;
                     prevIndent = map[key];
                 }
@@ -186,9 +189,12 @@ define(function (require, exports, module) {
         /* analyze the results. */
         for (var k in map) {
             if (map[k].samples > samples * 0.7) {
+                PerfUtils.addMeasurement(sniffingTimer);
                 return map[k];
             }
         }
+        
+        PerfUtils.addMeasurement(sniffingTimer);
         return null;
     }
     
