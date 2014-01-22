@@ -42,7 +42,8 @@ define(function (require, exports, module) {
             lineNo          = 1,
             samples         = 0,
             map             = {},
-            newLine         = true;
+            newLine         = true,
+            prevIndent;             // last indent successfully detected or null
         
         // settings
         var leaveDefaultIfNotCertain = true;
@@ -55,6 +56,8 @@ define(function (require, exports, module) {
                 newLine = false;
             }
             switch (currc) {
+                /* possible beginning or ending of a block comment or beginning
+                 * of a line comment */
                 case '/':
                     if (inBlockComment && prevc === '*') {
                         inBlockComment = false;
@@ -62,11 +65,13 @@ define(function (require, exports, module) {
                         inLineComment = true;
                     }
                     break;
+                /* possible begining of a comment */
                 case '*':
                     if (prevc === '/') {
                         inBlockComment = true;
                     }
                     break;
+                /* new line, number of things happen. */
                 case '\n':
                     inLineComment = false;
                     lineNo++;
@@ -75,66 +80,105 @@ define(function (require, exports, module) {
                         spaceCount = 0;
                     }
                     break;
+                /* new scope -- important for the indent */
                 case '{':
                     if (!inBlockComment && !inLineComment) {
                         nestLevel++;
                         inExpression = false;
                     }
                     break;
+                /* closing scope */
                 case '}':
                     if (!inBlockComment && !inLineComment) {
                         nestLevel--;
                         inExpression = false;
                     }
                     break;
+                /* indents itself */
                 case ' ':
                 case '\t':
                     if (newLine && !inExpression && !inBlockComment) {
                         spaceCount++;
                     }
                     break;
+                /* expression terminator */
                 case ';':
                     if (!inBlockComment && !inLineComment) {
                         inExpression = false;
                     }
                     break;
+                /* all the other character, including non-treated whitespaces
+                 * are stupidly considered whitespaces
+                 */
                 default:
                     if (!inExpression && !inBlockComment && !inLineComment) {
                         inExpression = true;
                     }
                     break;
             }
+            /* see if we got somewhere */
             if (spaceCount > 0 && (currc !== ' ' && currc !== '\t')) {
                 var spacePerIndent = (nestLevel) ? Math.floor(spaceCount / nestLevel) : spaceCount,
                     key,
-                    indentCharName;
+                    indentCharName,
+                    effectiveScope;
                 
-                samples++;
+                if (nestLevel < 0) {
+                    /* parser is completely lost -- give up */
+                    break;
+                }
+                
+                /* if the indent is not the same as the previously detected, try to
+                 * account for special cases tweak the scope back and forth, but do
+                 * not parse the language. */
+                if (prevc === ' ' && prevIndent && spacePerIndent !== prevIndent.indent) {
+                    var altSpacesPerIndent = (nestLevel - 1 > 0) ? Math.floor(spaceCount/nestLevel-1) : spaceCount;
+                    if (altSpacesPerIndent === prevIndent.indent) {
+                        spacePerIndent = altSpacesPerIndent;
+                        effectiveScope = nestLevel - 1;
+                    }
+                    altSpacesPerIndent = Math.floor(spaceCount/(nestLevel+1));
+                    if (altSpacesPerIndent === prevIndent.indent) {
+                        spacePerIndent = altSpacesPerIndent;
+                        effectiveScope = nestLevel + 1;
+                    }
+                } else {
+                    effectiveScope = nestLevel;
+                }
+                
+                /* got ourselves a sample */
+                if (effectiveScope === 0 || spacePerIndent === 0) {
+                } else {
 
-                if (prevc === " ") {
-                    indentCharName = "space";
-                } else if (prevc === '\t') {
-                    indentCharName = "tab";
-                } else {
-                    // this is an error condition
-                    console.log("Parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
+                    samples++;
+                    if (prevc === " ") {
+                        indentCharName = "space";
+                    } else if (prevc === '\t') {
+                        indentCharName = "tab";
+                    } else {
+                        // this is an error condition
+                        console.log("Parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
+                    }
+                    
+                    key = indentCharName + spacePerIndent;
+                    
+                    if (map[key] === undefined) {
+                        map[key] = {
+                            'char': prevc,
+                            'indent': spacePerIndent,
+                            'samples': 1
+                        };
+                    } else {
+                        map[key].samples++;
+                    }
+                    // DEBUG
+                    console.log("Line " + lineNo + ": indent " + spacePerIndent + " " + indentCharName + "s" + "(scope " + nestLevel + ", " + effectiveScope + ")");
+                    spaceCount = 0;
+                    prevIndent = map[key];
                 }
-                
-                key = indentCharName + spacePerIndent;
-                
-                if (map[key] === undefined) {
-                    map[key] = {
-                        'char': prevc,
-                        'indent': spacePerIndent,
-                        'samples': 1
-                    };
-                } else {
-                    map[key].samples++;
-                }
-                spaceCount = 0;
             }
             i++;
-            if (i > length || samples > SAMPLE_LINES_NO) {
+            if (i > length || samples === SAMPLE_LINES_NO) {
                 break;
             }
         } /* while */
