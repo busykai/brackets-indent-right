@@ -13,7 +13,7 @@ define(function (require, exports, module) {
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
         Strings                 = brackets.getModule("strings"),
         
-        /* Number of lines to be sampled. Only code lines will be sampled. */
+        /* Number of lines to be sampled. Only code lines which must follow certain indent will be sampled. */
         SAMPLE_LINES_NO         = 20,
     
         /* IDs of the status bar elements. */
@@ -39,11 +39,13 @@ define(function (require, exports, module) {
             inLineComment   = false,
             inExpression    = false,
             nestLevel       = 0,
-            spaceCount      = 0,
+            spaceCount      = 0,    // spaces at the beginning of the line
+            charCount       = 0,    // total characters in the line
             lineNo          = 1,
             samples         = 0,
             map             = {},
             newLine         = true,
+            suspectMinified = 0,
             prevIndent;             // last indent successfully detected or null
         
         // settings
@@ -55,9 +57,13 @@ define(function (require, exports, module) {
             prevc = currc;
             currc = text[i];
 
+            /* do not count spaces if a line begins with a non-space */
             if (newLine && (currc !== ' ' && currc !== '\t')) {
                 newLine = false;
             }
+
+            charCount++;
+
             switch (currc) {
                 /* possible beginning or ending of a block comment or beginning
                  * of a line comment */
@@ -76,12 +82,18 @@ define(function (require, exports, module) {
                     break;
                 /* new line, number of things happen. */
                 case '\n':
-                    inLineComment = false;
-                    lineNo++;
-                    newLine = true;
+                    if (spaceCount === 0 && charCount > 300) {
+                        // suspect minified file a couple of lines like it and we're done
+                        suspectMinified++;
+                    }
                     if (spaceCount > 0) {
                         spaceCount = 0;
                     }
+                    charCount = 0;
+                    inLineComment = false;
+                    lineNo++;
+                    newLine = true;
+
                     break;
                 /* new scope -- important for the indent */
                 case '{':
@@ -117,19 +129,31 @@ define(function (require, exports, module) {
                     if (!inExpression && !inBlockComment && !inLineComment) {
                         inExpression = true;
                     }
+                    if (charCount > 1024) {
+                        suspectMinified = 2; /* needs to be more than 1 to stop */
+                    }
                     break;
             }
+            /* see if we need to reasonable stop. */
+            if (nestLevel < 0) {
+                /* parser is completely lost -- give up */
+                console.log("Proper Indent: parser got lost (because it's not a parser)");
+                map = {};
+                break;
+            }
+            if (suspectMinified > 1) {
+                /* two successive suspicious lines -- assume minified */
+                console.log("Proper Indent: not detecting indents in minified files");
+                map = {};
+                break;
+            }
+            
             /* see if we got somewhere */
             if (spaceCount > 0 && (currc !== ' ' && currc !== '\t')) {
                 var spacePerIndent = (nestLevel) ? Math.floor(spaceCount / nestLevel) : spaceCount,
                     key,
                     indentCharName,
                     effectiveScope;
-                
-                if (nestLevel < 0) {
-                    /* parser is completely lost -- give up */
-                    break;
-                }
                 
                 /* if the indent is not the same as the previously detected, try to
                  * account for special cases tweak the scope back and forth, but do
@@ -139,11 +163,12 @@ define(function (require, exports, module) {
                     if (altSpacesPerIndent === prevIndent.indent) {
                         spacePerIndent = altSpacesPerIndent;
                         effectiveScope = nestLevel - 1;
-                    }
-                    altSpacesPerIndent = Math.floor(spaceCount/(nestLevel+1));
-                    if (altSpacesPerIndent === prevIndent.indent) {
-                        spacePerIndent = altSpacesPerIndent;
-                        effectiveScope = nestLevel + 1;
+                    } else {
+                        altSpacesPerIndent = Math.floor(spaceCount/(nestLevel+1));
+                        if (altSpacesPerIndent === prevIndent.indent) {
+                            spacePerIndent = altSpacesPerIndent;
+                            effectiveScope = nestLevel + 1;
+                        }
                     }
                 } else {
                     effectiveScope = nestLevel;
