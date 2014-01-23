@@ -85,6 +85,9 @@ define(function (require, exports, module) {
                     if (spaceCount === 0 && charCount > 300) {
                         // suspect minified file a couple of lines like it and we're done
                         suspectMinified++;
+                    } else {
+                        // stop being suspicious if it seems to be a reasonable line
+                        suspectMinified = 0;
                     }
                     if (spaceCount > 0) {
                         spaceCount = 0;
