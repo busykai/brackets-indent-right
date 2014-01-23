@@ -24,13 +24,10 @@ define(function (require, exports, module) {
         INDENT_WIDTH_LABEL      = "indent-width-label";
     
     var _defaultSpaceUnits  = PreferencesManager.get("spaceUnits"),
-        _defaultUseTabChar  = PreferencesManager.get("useTabChar"),
-        _defaultTabSize     = PreferencesManager.get("tabSize");
+        _defaultUseTabChar  = PreferencesManager.get("useTabChar");
         
-    PreferencesManager.addScope("proper-indent", new PreferencesBase.MemoryStorage());
-    PreferencesManager.set("proper-indent", "spaceUnits", _defaultSpaceUnits);
-    PreferencesManager.set("proper-indent", "useTabChar", _defaultSpaceUnits);
-    PreferencesManager.set("proper-indent", "tabSize", _defaultSpaceUnits);
+    PreferencesManager.set("session", "spaceUnits", _defaultSpaceUnits);
+    PreferencesManager.set("session", "useTabChar", _defaultUseTabChar);
         
     /**
      * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
