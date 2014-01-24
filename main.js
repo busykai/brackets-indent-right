@@ -270,7 +270,7 @@ define(function (require, exports, module) {
         }
     }
     
-    AppInit.appReady(function () {
+    AppInit.htmlReady(function () {
         $(DocumentManager)
             .on("documentRefreshed.indent-right documentSaved.indent-right", function(e, doc) {
                 run(doc);
