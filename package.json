@@ -3,7 +3,7 @@
     "title": "Proper Indent",
     "description": "This extension will detect indentation used in your JavaScript files and will set it automatically",
     "homepage": "https://github.com/busykai/brackets-indent-right",
-    "version": "0.0.1",
+    "version": "0.0.4",
     "author": "Arzhan \"kai\" Kinzhalin (https://github.com/busykai)",
     "license": "MIT",
     "engines": {
