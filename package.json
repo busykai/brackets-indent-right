@@ -1,7 +1,7 @@
 {
     "name": "busykai.indent-right",
     "title": "Proper Indent",
-    "description": "This extension will detect indentation used in your JavaScript files and will set it automatically",
+    "description": "Hack on multiple diverse projects at the same time? Each using different indent? This extension will save you a lot of time switching your Brackets indent settings.",
     "homepage": "https://github.com/busykai/brackets-indent-right",
     "version": "0.0.4",
     "author": "Arzhan \"kai\" Kinzhalin (https://github.com/busykai)",
