@@ -13,6 +13,7 @@ define(function (require, exports, module) {
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
         PreferencesBase          = brackets.getModule("preferences/PreferencesBase"),
         PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
+        ProjectManager          = brackets.getModule("project/ProjectManager"),
         Strings                 = brackets.getModule("strings"),
         
         /* Number of lines to be sampled. Only code lines will be sampled. */
@@ -23,21 +24,11 @@ define(function (require, exports, module) {
         INDENT_WIDTH            = "indent-width-input",
         INDENT_WIDTH_LABEL      = "indent-width-label";
     
-    var _defaultSpaceUnits  = PreferencesManager.get("spaceUnits"),
-        _defaultUseTabChar  = PreferencesManager.get("useTabChar"),
-        _defaultIndent      = {
-            char: (_defaultUseTabChar) ? '\t' : ' ',
-            indent: _defaultSpaceUnits
-        },
-        _prefLocation = {
-            location: {
-                scope: "session"
-            }
-        };
-    
-        
-    PreferencesManager.set("spaceUnits", _defaultSpaceUnits, _prefLocation);
-    PreferencesManager.set("useTabChar", _defaultUseTabChar, _prefLocation);
+    var _prefLocation = {
+        location: {
+            scope: "session"
+        }
+    };
         
     /**
      * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
@@ -222,20 +213,37 @@ define(function (require, exports, module) {
         }
     }
     
+    function getFallbackIndent() {
+        var spaceUnits,
+            useTabChar;
+        PreferencesManager.set("spaceUnits", undefined, _prefLocation);
+        PreferencesManager.set("useTabChar", undefined, _prefLocation);
+
+        spaceUnits  = PreferencesManager.get("spaceUnits");
+        useTabChar  = PreferencesManager.get("useTabChar");
+
+        return {
+            char: (useTabChar) ? '\t' : ' ',
+            indent: spaceUnits
+        };
+
+    }
+    
     /**
      * Runs the analysis under proper conditions.
      */
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
-            indent;
+            indent,
+            fallbackIndent = getFallbackIndent();
         if (!doc || doc.getLanguage().getName() !== "JavaScript") {
-            set(_defaultIndent);
+            set(fallbackIndent);
             return;
         }
         if ((indent = sniff(doc))) {
             set(indent);
         } else {
-            set(_defaultIndent);
+            set(fallbackIndent);
         }
     }
     
