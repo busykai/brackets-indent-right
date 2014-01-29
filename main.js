@@ -24,10 +24,20 @@ define(function (require, exports, module) {
         INDENT_WIDTH_LABEL      = "indent-width-label";
     
     var _defaultSpaceUnits  = PreferencesManager.get("spaceUnits"),
-        _defaultUseTabChar  = PreferencesManager.get("useTabChar");
+        _defaultUseTabChar  = PreferencesManager.get("useTabChar"),
+        _defaultIndent      = {
+            char: (_defaultUseTabChar) ? '\t' : ' ',
+            indent: _defaultSpaceUnits
+        },
+        _prefLocation = {
+            location: {
+                scope: "session"
+            }
+        };
+    
         
-    PreferencesManager.set("session", "spaceUnits", _defaultSpaceUnits);
-    PreferencesManager.set("session", "useTabChar", _defaultUseTabChar);
+    PreferencesManager.set("spaceUnits", _defaultSpaceUnits, _prefLocation);
+    PreferencesManager.set("useTabChar", _defaultUseTabChar, _prefLocation);
         
     /**
      * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
@@ -206,9 +216,9 @@ define(function (require, exports, module) {
      * will do the rest.
      */
     function set(indent) {
-        PreferencesManager.set("useTabChar", (indent.char === '\t' ) ? true : false);
+        PreferencesManager.set("useTabChar", (indent.char === '\t' ) ? true : false, _prefLocation);
         if (indent.char === ' ') {
-            PreferencesManager.set("spaceUnits", indent.indent);
+            PreferencesManager.set("spaceUnits", indent.indent, _prefLocation);
         }
     }
     
@@ -219,10 +229,13 @@ define(function (require, exports, module) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent;
         if (!doc || doc.getLanguage().getName() !== "JavaScript") {
+            set(_defaultIndent);
             return;
         }
         if ((indent = sniff(doc))) {
             set(indent);
+        } else {
+            set(_defaultIndent);
         }
     }
     
