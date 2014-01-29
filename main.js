@@ -11,6 +11,9 @@ define(function (require, exports, module) {
         DocumentManager         = brackets.getModule("document/DocumentManager"),
         EditorManager           = brackets.getModule("editor/EditorManager"),
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
+        PreferencesBase          = brackets.getModule("preferences/PreferencesBase"),
+        PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
+        ProjectManager          = brackets.getModule("project/ProjectManager"),
         Strings                 = brackets.getModule("strings"),
         
         /* Number of lines to be sampled. Only code lines which must follow certain indent will be sampled. */
@@ -20,7 +23,12 @@ define(function (require, exports, module) {
         INDENT_TYPE             = "indent-type",
         INDENT_WIDTH            = "indent-width-input",
         INDENT_WIDTH_LABEL      = "indent-width-label";
-        
+    
+    var _prefLocation = {
+        location: {
+            scope: "session"
+        }
+    };
         
     /**
      * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
@@ -223,37 +231,30 @@ define(function (require, exports, module) {
     }
     
     /**
-     * Sets the Brackets indentation settings. Since there's no API to do that, it emulates user action to
-     * accomplish the purpose.
+     * Sets the Brackets indentation settings. Simply manipulate the preferences, the editor
+     * will do the rest.
      */
     function set(indent) {
-        var $indentType,
-            $indentWidth,
-            $indentWidthLabel;
-        
-        $indentType     = $("#" + INDENT_TYPE);
-        $indentWidth    = $("#" + INDENT_WIDTH);
-        $indentWidthLabel = $("#" + INDENT_WIDTH_LABEL); 
-        
-        if ($indentType.text() === Strings.STATUSBAR_SPACES) {
-            if (indent.char === '\t') {
-                $indentType.trigger("click");
-            }
-        } else if ($indentType.text() === Strings.STATUSBAR_TAB_SIZE) {
-            if (indent.char === ' ') {
-                $indentType.trigger("click");
-            }
-        }
-        
+        PreferencesManager.set("useTabChar", (indent.char === '\t' ) ? true : false, _prefLocation);
         if (indent.char === ' ') {
-            $indentWidth.on("focus.indent-right", function(e) {
-                $indentWidth.val(indent.indent);
-                $indentWidth.blur();
-                $indentWidth.off("focus.indent-right");
-            });
-            $indentWidthLabel.trigger("click");
+            PreferencesManager.set("spaceUnits", indent.indent, _prefLocation);
         }
-        
+    }
+    
+    function getFallbackIndent() {
+        var spaceUnits,
+            useTabChar;
+        PreferencesManager.set("spaceUnits", undefined, _prefLocation);
+        PreferencesManager.set("useTabChar", undefined, _prefLocation);
+
+        spaceUnits  = PreferencesManager.get("spaceUnits");
+        useTabChar  = PreferencesManager.get("useTabChar");
+
+        return {
+            char: (useTabChar) ? '\t' : ' ',
+            indent: spaceUnits
+        };
+
     }
     
     /**
@@ -261,13 +262,21 @@ define(function (require, exports, module) {
      */
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
-            indent;
+            indent,
+            fallbackIndent,
+            overallTimer;
+        overallTimer = PerfUtils.markStart("Proper indent: " + doc.file.fullPath);
+        fallbackIndent = getFallbackIndent();
         if (!doc || doc.getLanguage().getName() !== "JavaScript") {
+            set(fallbackIndent);
             return;
         }
         if ((indent = sniff(doc))) {
             set(indent);
+        } else {
+            set(fallbackIndent);
         }
+        PerfUtils.addMeasurement(overallTimer);
     }
     
     AppInit.htmlReady(function () {
