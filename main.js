@@ -235,7 +235,10 @@ define(function (require, exports, module) {
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent,
-            fallbackIndent = getFallbackIndent();
+            fallbackIndent,
+            overallTimer;
+        overallTimer = PerfUtils.markStart("Proper indent: " + doc.file.fullPath);
+        fallbackIndent = getFallbackIndent();
         if (!doc || doc.getLanguage().getName() !== "JavaScript") {
             set(fallbackIndent);
             return;
@@ -245,6 +248,7 @@ define(function (require, exports, module) {
         } else {
             set(fallbackIndent);
         }
+        PerfUtils.addMeasurement(overallTimer);
     }
     
     AppInit.appReady(function () {
