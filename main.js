@@ -11,7 +11,7 @@ define(function (require, exports, module) {
         DocumentManager         = brackets.getModule("document/DocumentManager"),
         EditorManager           = brackets.getModule("editor/EditorManager"),
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
-        PreferencesBase          = brackets.getModule("preferences/PreferencesBase"),
+        PreferencesBase         = brackets.getModule("preferences/PreferencesBase"),
         PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         Strings                 = brackets.getModule("strings"),
@@ -145,7 +145,7 @@ define(function (require, exports, module) {
                     }
                     break;
             }
-            /* see if we need to reasonable stop. */
+            /* see if we need to reasonably stop. */
             if (nestLevel < 0) {
                 /* parser is completely lost -- give up */
                 console.log("Proper Indent: parser got lost (because it's not a parser)");
@@ -194,7 +194,7 @@ define(function (require, exports, module) {
                         indentCharName = "tab";
                     } else {
                         // this is an error condition
-                        console.error("Parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
+                        console.error("Proper Indent: parse internal error. prevc = '" + prevc + "' and currc = '" + currc + "'");
                     }
                     
                     key = indentCharName + spacePerIndent;
@@ -241,20 +241,9 @@ define(function (require, exports, module) {
         }
     }
     
-    function getFallbackIndent() {
-        var spaceUnits,
-            useTabChar;
+    function resetPrefs() {
         PreferencesManager.set("spaceUnits", undefined, _prefLocation);
         PreferencesManager.set("useTabChar", undefined, _prefLocation);
-
-        spaceUnits  = PreferencesManager.get("spaceUnits");
-        useTabChar  = PreferencesManager.get("useTabChar");
-
-        return {
-            char: (useTabChar) ? '\t' : ' ',
-            indent: spaceUnits
-        };
-
     }
     
     /**
@@ -263,26 +252,34 @@ define(function (require, exports, module) {
     function run(input) {
         var doc = input || DocumentManager.getCurrentDocument(),
             indent,
-            fallbackIndent,
             overallTimer;
+        
+        if (!doc) {
+            return;
+        }
+        
         overallTimer = PerfUtils.markStart("Proper indent: " + doc.file.fullPath);
-        fallbackIndent = getFallbackIndent();
+        
         if (!doc || doc.getLanguage().getName() !== "JavaScript") {
-            set(fallbackIndent);
+            resetPrefs();
             return;
         }
         if ((indent = sniff(doc))) {
+        
             set(indent);
         } else {
-            set(fallbackIndent);
+            resetPrefs();
         }
+        
         PerfUtils.addMeasurement(overallTimer);
     }
     
     AppInit.htmlReady(function () {
         $(DocumentManager)
             .on("documentRefreshed.indent-right documentSaved.indent-right", function(e, doc) {
-                run(doc);
+                if (doc === DocumentManager.getCurrentDocument()) {
+                    run(doc);
+                }
             })
             .on("currentDocumentChange.indent-right", function(e) {
                 run();
