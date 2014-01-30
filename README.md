@@ -1,5 +1,5 @@
-Proper indent
-=============
+Proper indent ([Brackets](https://github.com/adobe/brackets) extension)
+=======================================================================
 
 Hack on multiple diverse projects at the same time? Each using different indent? This extension will save you a lot of time switching your Brackets indent settings. It detect and set the indentation according to the indentation used in the current file or will fallback for default configuration.
 
