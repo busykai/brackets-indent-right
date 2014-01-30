@@ -7,14 +7,9 @@
 define(function (require, exports, module) {
     "use strict";
     var AppInit                 = brackets.getModule("utils/AppInit"),
-        Document                = brackets.getModule("document/Document"),
         DocumentManager         = brackets.getModule("document/DocumentManager"),
-        EditorManager           = brackets.getModule("editor/EditorManager"),
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
-        PreferencesBase         = brackets.getModule("preferences/PreferencesBase"),
         PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
-        ProjectManager          = brackets.getModule("project/ProjectManager"),
-        Strings                 = brackets.getModule("strings"),
         
         /* Number of lines to be sampled. Only code lines which must follow certain indent will be sampled. */
         SAMPLE_LINES_NO         = 20,
