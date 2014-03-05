@@ -294,6 +294,8 @@ define(function (require, exports, module) {
             return [indentation, post_indentation];
         }
         
+        var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
+        
         /* collect statistics. */
         while (i < length) {
             line = get_indent_line();
@@ -343,9 +345,11 @@ define(function (require, exports, module) {
                 }
             }
 
+            PerfUtils.addMeasurement(sniffingTimer);
             return result;
         }
 
+        PerfUtils.addMeasurement(sniffingTimer);
         return null;
     }
     
