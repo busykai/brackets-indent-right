@@ -281,7 +281,7 @@ define(function (require, exports, module) {
             }
 
             /* get the rest of the line. */
-            while (i < length && sampledLines < SAMPLE_LINES_NO) {
+            while (i < length) {
                 if (text[i] === "\n") {
                     i++;
                     break;
@@ -297,7 +297,7 @@ define(function (require, exports, module) {
         var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
         
         /* collect statistics. */
-        while (i < length) {
+        while (i < length && sampledLines < SAMPLE_LINES_NO) {
             line = get_indent_line();
             
             /* skip lines with the same indentation as previous line,
