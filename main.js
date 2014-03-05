@@ -26,10 +26,10 @@ define(function (require, exports, module) {
     };
         
     /**
-     * Detects the indentation type used in the file. SAMPLE_LINES_NO is taken from the beginning of the file.
+     * Detects the indentation type used in a javascript file. SAMPLE_LINES_NO is taken from the beginning of the file.
      * Indentation at the global scope is ignored.
      */
-    function sniff(doc) {
+    function sniff_javascript(doc) {
         var text = doc.getText(),
             length = text.length,
             i = 0,
@@ -226,6 +226,130 @@ define(function (require, exports, module) {
     }
     
     /**
+     * Detects the indentation type used in a generic file. SAMPLE_LINES_NO is
+     * taken from the beginning of the file.
+     */
+    function sniff_generic(doc) {
+        var text = doc.getText(),
+            length = text.length,
+            i = 0,
+            sampledLines = 0,
+            prevIndent = "",
+            line = [],
+            spaceDiff = 0;
+        
+        /* statistics-gathering variables. */
+        var tabLines = 0,
+            spaceLines = 0,
+            spaceCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0};
+        
+        /**
+         * Fetches the next line, split into indentation and the text after
+         * the indentation.
+         */
+        function get_indent_line() {
+            var indentation = "",
+                post_indentation = "";
+            
+            /* end of document, abort. */
+            if (i >= length) {
+                return null;
+            }
+            
+            /* get indentation of the current line.  Indentation in this
+             * case is defined as matching leading whitespace characters.
+             * So, for example, two tabs followed by three spaces counts
+             * as two tabs of indentation--the three spaces are ignored.
+             */
+            if (text[i] === " ") {
+                // line is indented with spaces
+                while (i < length && text[i] === " ") {
+                    indentation += " ";
+                    i++;
+                }
+            } else if (text[i] === "\t") {
+                // line is indented with tabs
+                while (i < length && text[i] === "\t") {
+                    indentation += "\t";
+                    i++;
+                }
+            }
+            
+            /* eat remaining whitespace. */
+            while (i < length && (text[i] === " " || text[i] === "\t")) {
+                i++;
+            }
+
+            /* get the rest of the line. */
+            while (i < length && sampledLines < SAMPLE_LINES_NO) {
+                if (text[i] === "\n") {
+                    i++;
+                    break;
+                } else {
+                    post_indentation += text[i];
+                    i++;
+                }
+            }
+            
+            return [indentation, post_indentation];
+        }
+        
+        /* collect statistics. */
+        while (i < length) {
+            line = get_indent_line();
+            
+            /* skip lines with the same indentation as previous line,
+             * and skip lines that are only whitespace. */
+            if (line[0] === prevIndent || line[1] === "") {
+                continue;
+            }
+            
+            if (line[0][0] === "\t") {
+                if ((line[0].length - prevIndent.length) > 0) {
+                    /* if the line starts with a tab, and it's an indentation
+                     * increase, record it as tab indent. */
+                    sampledLines++;
+                    tabLines++;
+                }
+            } else {
+                spaceDiff = line[0].length - prevIndent.length;
+                if (spaceDiff > 0) {
+                    /* if the line starts with a space, determine the
+                     * indentation increase over the previous line, if any,
+                     * and record it. */
+                    sampledLines++;
+                    spaceLines++;
+                    spaceCounts[spaceDiff]++;
+                }
+            }
+            
+            prevIndent = line[0];
+        }
+        
+        // Analyze the results.
+        var result = {'char': '', 'indent': 0, 'samples': 0};
+        if (tabLines > 0 || spaceLines > 0) {
+            if ((tabLines * 2) > spaceLines) { // heuristic: the presence of lines starting with tabs is a stronger indication, so weight it double
+                result.char = '\t';
+                result.samples = tabLines;
+            }
+            else {
+                for (var ii = 1; ii <= 8; ii++) {
+                    if (spaceCounts[ii] > result.samples) {
+                        result.char = ' ';
+                        result.indent = ii;
+                        result.samples = spaceCounts[ii];
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        return null;
+    }
+    
+    /**
      * Sets the Brackets indentation settings. Simply manipulate the preferences, the editor
      * will do the rest.
      */
@@ -255,12 +379,20 @@ define(function (require, exports, module) {
         
         overallTimer = PerfUtils.markStart("Proper indent: " + doc.file.fullPath);
         
-        if (!doc || doc.getLanguage().getName() !== "JavaScript") {
+        if (!doc) {
             resetPrefs();
             return;
         }
-        if ((indent = sniff(doc))) {
         
+        /* sniff document's indentation.  Algorithm used depends on language. */
+        if (doc.getLanguage().getName() === "JavaScript") {
+            indent = sniff_javascript(doc);
+        } else {
+            indent = sniff_generic(doc);
+        }
+        
+        /* set indentation style. */
+        if (indent) {
             set(indent);
         } else {
             resetPrefs();
