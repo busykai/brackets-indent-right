@@ -231,7 +231,7 @@ define(function (require, exports, module) {
      */
     function sniff_generic(doc) {
         var text = doc.getText(),
-            length = text.length,
+            length = text.length < 25000 ? text.length : 25000, // Max 25000 character parsing, to abort pathological cases
             i = 0,
             sampledLines = 0,
             prevIndent = "",
@@ -244,12 +244,14 @@ define(function (require, exports, module) {
             spaceCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0};
         
         /**
-         * Fetches the next line, split into indentation and the text after
-         * the indentation.
+         * Fetches the indentation of the next line.
+         *
+         * Returns the indentation string and a bool indicating if the line
+         * is entirely whitespace.
          */
         function get_indent_line() {
             var indentation = "",
-                post_indentation = "";
+                all_whitespace = "";
             
             /* end of document, abort. */
             if (i >= length) {
@@ -279,19 +281,19 @@ define(function (require, exports, module) {
             while (i < length && (text[i] === " " || text[i] === "\t")) {
                 i++;
             }
+            
+            all_whitespace = text[i] === "\n";
 
-            /* get the rest of the line. */
+            /* eat the rest of the line. */
             while (i < length) {
                 if (text[i] === "\n") {
                     i++;
                     break;
-                } else {
-                    post_indentation += text[i];
-                    i++;
                 }
+                i++;
             }
             
-            return [indentation, post_indentation];
+            return [indentation, all_whitespace];
         }
         
         var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
@@ -302,7 +304,7 @@ define(function (require, exports, module) {
             
             /* skip lines with the same indentation as previous line,
              * and skip lines that are only whitespace. */
-            if (line[0] === prevIndent || line[1] === "") {
+            if (line[0] === prevIndent || line[1]) {
                 continue;
             }
             
