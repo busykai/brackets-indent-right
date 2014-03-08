@@ -332,27 +332,24 @@ define(function (require, exports, module) {
         
         // Analyze the results.
         var result = {'char': '', 'indent': 0, 'samples': 0};
-        if (tabLines > 0 || spaceLines > 0) {
-            if ((tabLines * 2) > spaceLines) { // heuristic: the presence of lines starting with tabs is a stronger indication, so weight it double
-                result.char = '\t';
-                result.samples = tabLines;
-            }
-            else {
-                for (var ii = 1; ii <= 8; ii++) {
-                    if (spaceCounts[ii] > result.samples) {
-                        result.char = ' ';
-                        result.indent = ii;
-                        result.samples = spaceCounts[ii];
-                    }
+        tabLines *= 2; // heuristic: the presence of lines starting with tabs is a stronger indication, so weight it double
+        if (tabLines > spaceLines) { 
+            result.char = '\t';
+            result.samples = tabLines;
+        } else if (spaceLines > tabLines) {
+            result.char = ' ';
+            for (var ii = 1; ii <= 8; ii++) {
+                if (spaceCounts[ii] >= result.samples) {
+                    result.indent = ii;
+                    result.samples = spaceCounts[ii];
                 }
             }
-
-            PerfUtils.addMeasurement(sniffingTimer);
-            return result;
+        } else {
+            result = null;
         }
 
         PerfUtils.addMeasurement(sniffingTimer);
-        return null;
+        return result;
     }
     
     /**
