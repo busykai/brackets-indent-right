@@ -265,16 +265,16 @@ define(function (require, exports, module) {
              */
             if (text[i] === " ") {
                 // line is indented with spaces
-                while (i < length && text[i] === " ") {
+                do {
                     indentation += " ";
                     i++;
-                }
+                } while (i < length && text[i] === " ");
             } else if (text[i] === "\t") {
                 // line is indented with tabs
-                while (i < length && text[i] === "\t") {
+                do {
                     indentation += "\t";
                     i++;
-                }
+                } while (i < length && text[i] === "\t");
             }
             
             /* eat remaining whitespace. */
