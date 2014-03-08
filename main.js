@@ -13,6 +13,7 @@ define(function (require, exports, module) {
         
         /* Number of lines to be sampled. Only code lines which must follow certain indent will be sampled. */
         SAMPLE_LINES_NO         = 20,
+        LONG_LINE_LENGTH        = 1024,
     
         /* IDs of the status bar elements. */
         INDENT_TYPE             = "indent-type",
@@ -135,7 +136,7 @@ define(function (require, exports, module) {
                     if (!inExpression && !inBlockComment && !inLineComment) {
                         inExpression = true;
                     }
-                    if (charCount > 1024) {
+                    if (charCount > LONG_LINE_LENGTH) {
                         suspectMinified = 2; /* needs to be more than 1 to stop */
                     }
                     break;
@@ -236,7 +237,8 @@ define(function (require, exports, module) {
             sampledLines = 0,
             prevIndent = "",
             line = [],
-            spaceDiff = 0;
+            spaceDiff = 0,
+            longLines = 0;
         
         /* statistics-gathering variables. */
         var tabLines = 0,
@@ -246,12 +248,13 @@ define(function (require, exports, module) {
         /**
          * Fetches the indentation of the next line.
          *
-         * Returns the indentation string and a bool indicating if the line
-         * is entirely whitespace.
+         * Returns the indentation string, a bool indicating if the line
+         * is entirely whitespace, and the line length.
          */
         function getIndentLine() {
             var indentation = "",
-                allWhitespace = "";
+                allWhitespace = "",
+                iStart = i;
             
             /* end of document, abort. */
             if (i >= length) {
@@ -293,7 +296,7 @@ define(function (require, exports, module) {
                 i++;
             }
             
-            return [indentation, allWhitespace];
+            return [indentation, allWhitespace, i - iStart];
         }
         
         var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
@@ -301,6 +304,16 @@ define(function (require, exports, module) {
         /* collect statistics. */
         while (i < length && sampledLines < SAMPLE_LINES_NO) {
             line = getIndentLine();
+            
+            /* check for overly long lines, and abort if we hit
+             * more than one. */
+            if (line[2] > LONG_LINE_LENGTH) {
+                longLines++;
+                if (longLines > 1) {
+                    PerfUtils.addMeasurement(sniffingTimer);
+                    return null;
+                }
+            }
             
             /* skip lines with the same indentation as previous line,
              * and skip lines that are only whitespace. */
