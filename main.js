@@ -29,7 +29,7 @@ define(function (require, exports, module) {
      * Detects the indentation type used in a javascript file. SAMPLE_LINES_NO is taken from the beginning of the file.
      * Indentation at the global scope is ignored.
      */
-    function sniff_javascript(doc) {
+    function sniffJavascript(doc) {
         var text = doc.getText(),
             length = text.length,
             i = 0,
@@ -229,7 +229,7 @@ define(function (require, exports, module) {
      * Detects the indentation type used in a generic file. SAMPLE_LINES_NO is
      * taken from the beginning of the file.
      */
-    function sniff_generic(doc) {
+    function sniffGeneric(doc) {
         var text = doc.getText(),
             length = text.length < 25000 ? text.length : 25000, // Max 25000 character parsing, to abort pathological cases
             i = 0,
@@ -249,9 +249,9 @@ define(function (require, exports, module) {
          * Returns the indentation string and a bool indicating if the line
          * is entirely whitespace.
          */
-        function get_indent_line() {
+        function getIndentLine() {
             var indentation = "",
-                all_whitespace = "";
+                allWhitespace = "";
             
             /* end of document, abort. */
             if (i >= length) {
@@ -282,7 +282,7 @@ define(function (require, exports, module) {
                 i++;
             }
             
-            all_whitespace = text[i] === "\n";
+            allWhitespace = text[i] === "\n";
 
             /* eat the rest of the line. */
             while (i < length) {
@@ -293,14 +293,14 @@ define(function (require, exports, module) {
                 i++;
             }
             
-            return [indentation, all_whitespace];
+            return [indentation, allWhitespace];
         }
         
         var sniffingTimer = PerfUtils.markStart("Indent sniffing:\t" + doc.file.fullPath);
         
         /* collect statistics. */
         while (i < length && sampledLines < SAMPLE_LINES_NO) {
-            line = get_indent_line();
+            line = getIndentLine();
             
             /* skip lines with the same indentation as previous line,
              * and skip lines that are only whitespace. */
@@ -392,9 +392,9 @@ define(function (require, exports, module) {
         
         /* sniff document's indentation.  Algorithm used depends on language. */
         if (doc.getLanguage().getName() === "JavaScript") {
-            indent = sniff_javascript(doc);
+            indent = sniffJavascript(doc);
         } else {
-            indent = sniff_generic(doc);
+            indent = sniffGeneric(doc);
         }
         
         /* set indentation style. */
