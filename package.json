@@ -3,7 +3,7 @@
     "title": "Proper Indent",
     "description": "Hack on multiple diverse projects at the same time? Each using different indent? This extension will save you a lot of time switching your Brackets indent settings.",
     "homepage": "https://github.com/busykai/brackets-indent-right",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "Arzhan \"kai\" Kinzhalin (https://github.com/busykai)",
     "license": "MIT",
     "engines": {
