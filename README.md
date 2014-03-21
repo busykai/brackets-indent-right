@@ -6,7 +6,7 @@ Hack on multiple diverse projects at the same time? Each using different indent?
 Features
 ========
 
-- So far only JavaScript files are supported
+- Supports multiple file types: JavaScript uses special parser, the rest uses generic parser (kudos to @cessen).
 - Works well with new preferences system (starting Sprint 36)
 - Recognizes minified files
 
@@ -18,12 +18,15 @@ This extension implements a simple parser capable of recognizing JavaScript synt
 TODO
 ====
 
-- Support JSON and HTML
 - (?) Support complicated cases and files which do not respect JavaScript syntax
 - (?) Support [SmartTabs](http://www.emacswiki.org/SmartTabs). Could require support for smart tabs from Brackets and/or CodeMirror2.
 
 History of changes
 ==================
+
+v.0.0.5
+-------
+- Generic indent sniffing mechanism implemented by Nathan Vegdahl (github: @cessen)
 
 v.0.0.4
 -------
