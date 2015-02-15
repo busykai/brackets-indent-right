@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Arzhan "kai" Kinzhalin
+ * Copyright 2014 Intel Corporation.
  * 
  * See the file LICENSE for copying permission.
  */
