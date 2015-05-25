@@ -8,6 +8,7 @@ define(function (require, exports, module) {
     "use strict";
     var AppInit                 = brackets.getModule("utils/AppInit"),
         DocumentManager         = brackets.getModule("document/DocumentManager"),
+        MainViewManager         = brackets.getModule("view/MainViewManager"),
         PerfUtils               = brackets.getModule("utils/PerfUtils"),
         PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
         
@@ -418,13 +419,14 @@ define(function (require, exports, module) {
     }
     
     AppInit.htmlReady(function () {
-        $(DocumentManager)
+        DocumentManager
             .on("documentRefreshed.indent-right documentSaved.indent-right", function(e, doc) {
                 if (doc === DocumentManager.getCurrentDocument()) {
                     run(doc);
                 }
-            })
-            .on("currentDocumentChange.indent-right", function(e) {
+            });
+        MainViewManager
+            .on("currentFileChange.indent-right", function(e) {
                 run();
             });
     });
