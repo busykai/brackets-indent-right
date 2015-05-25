@@ -3,7 +3,8 @@
  * 
  * See the file LICENSE for copying permission.
  */
-/* global console */
+/*jslint nomen: true, vars: true, plusplus: true */
+/*global console: false, define: false, brackets: false */
 define(function (require, exports, module) {
     "use strict";
     var AppInit                 = brackets.getModule("utils/AppInit"),
@@ -35,6 +36,7 @@ define(function (require, exports, module) {
         var text = doc.getText(),
             length = text.length,
             i = 0,
+            k,
             line = 1;
         
         // parser states
@@ -70,88 +72,87 @@ define(function (require, exports, module) {
             charCount++;
 
             switch (currc) {
-                /* possible beginning or ending of a block comment or beginning
-                 * of a line comment */
-                case '/':
-                    if (inBlockComment && prevc === '*') {
-                        inBlockComment = false;
-                    } else if (!inBlockComment && prevc === '/') {
-                        inLineComment = true;
-                    }
-                    break;
-                /* possible begining of a comment */
-                case '*':
-                    if (prevc === '/') {
-                        inBlockComment = true;
-                    }
-                    break;
-                /* new line, number of things happen. */
-                case '\n':
-                    if (spaceCount === 0 && charCount > 300) {
-                        // suspect minified file a couple of lines like it and we're done
-                        suspectMinified++;
-                    } else {
-                        // stop being suspicious if it seems to be a reasonable line
-                        suspectMinified = 0;
-                    }
-                    if (spaceCount > 0) {
-                        spaceCount = 0;
-                    }
-                    charCount = 0;
-                    inLineComment = false;
-                    lineNo++;
-                    newLine = true;
+            /* possible beginning or ending of a block comment or beginning
+             * of a line comment */
+            case '/':
+                if (inBlockComment && prevc === '*') {
+                    inBlockComment = false;
+                } else if (!inBlockComment && prevc === '/') {
+                    inLineComment = true;
+                }
+                break;
+            /* possible begining of a comment */
+            case '*':
+                if (prevc === '/') {
+                    inBlockComment = true;
+                }
+                break;
+            /* new line, number of things happen. */
+            case '\n':
+                if (spaceCount === 0 && charCount > 300) {
+                    // suspect minified file a couple of lines like it and we're done
+                    suspectMinified++;
+                } else {
+                    // stop being suspicious if it seems to be a reasonable line
+                    suspectMinified = 0;
+                }
+                if (spaceCount > 0) {
+                    spaceCount = 0;
+                }
+                charCount = 0;
+                inLineComment = false;
+                lineNo++;
+                newLine = true;
 
-                    break;
-                /* new scope -- important for the indent */
-                case '{':
-                    if (!inBlockComment && !inLineComment) {
-                        nestLevel++;
-                        inExpression = false;
-                    }
-                    break;
-                /* closing scope */
-                case '}':
-                    if (!inBlockComment && !inLineComment) {
-                        nestLevel--;
-                        inExpression = false;
-                    }
-                    break;
-                /* indents itself */
-                case ' ':
-                case '\t':
-                    if (newLine && !inExpression && !inBlockComment) {
-                        spaceCount++;
-                    }
-                    break;
-                /* expression terminator */
-                case ';':
-                    if (!inBlockComment && !inLineComment) {
-                        inExpression = false;
-                    }
-                    break;
-                /* all the other character, including non-treated whitespaces
-                 * are stupidly considered whitespaces
-                 */
-                default:
-                    if (!inExpression && !inBlockComment && !inLineComment) {
-                        inExpression = true;
-                    }
-                    if (charCount > LONG_LINE_LENGTH) {
-                        suspectMinified = 2; /* needs to be more than 1 to stop */
-                    }
-                    break;
+                break;
+            /* new scope -- important for the indent */
+            case '{':
+                if (!inBlockComment && !inLineComment) {
+                    nestLevel++;
+                    inExpression = false;
+                }
+                break;
+            /* closing scope */
+            case '}':
+                if (!inBlockComment && !inLineComment) {
+                    nestLevel--;
+                    inExpression = false;
+                }
+                break;
+            /* indents itself */
+            case ' ':
+            case '\t':
+                if (newLine && !inExpression && !inBlockComment) {
+                    spaceCount++;
+                }
+                break;
+            /* expression terminator */
+            case ';':
+                if (!inBlockComment && !inLineComment) {
+                    inExpression = false;
+                }
+                break;
+            /* all the other character, including non-treated whitespaces
+             * are stupidly considered whitespaces
+             */
+            default:
+                if (!inExpression && !inBlockComment && !inLineComment) {
+                    inExpression = true;
+                }
+                if (charCount > LONG_LINE_LENGTH) {
+                    suspectMinified = 2; /* needs to be more than 1 to stop */
+                }
+                break;
             }
             /* see if we need to reasonably stop. */
             if (nestLevel < 0) {
                 /* parser is completely lost -- give up */
-                console.log("Proper Indent: parser got lost (because it's not a parser)");
+                console.warn("Proper Indent: parser got lost (because it's not a parser)");
                 map = {};
                 break;
             }
             if (suspectMinified > 1) {
                 /* two successive suspicious lines -- assume minified */
-                console.log("Proper Indent: not detecting indents in minified files");
                 map = {};
                 break;
             }
@@ -167,12 +168,12 @@ define(function (require, exports, module) {
                  * account for special cases tweak the scope back and forth, but do
                  * not parse the language. */
                 if (prevc === ' ' && prevIndent && spacePerIndent !== prevIndent.indent) {
-                    var altSpacesPerIndent = (nestLevel - 1 > 0) ? Math.floor(spaceCount/nestLevel-1) : spaceCount;
+                    var altSpacesPerIndent = (nestLevel - 1 > 0) ? Math.floor(spaceCount / nestLevel - 1) : spaceCount;
                     if (altSpacesPerIndent === prevIndent.indent) {
                         spacePerIndent = altSpacesPerIndent;
                         effectiveScope = nestLevel - 1;
                     } else {
-                        altSpacesPerIndent = Math.floor(spaceCount/(nestLevel+1));
+                        altSpacesPerIndent = Math.floor(spaceCount / (nestLevel + 1));
                         if (altSpacesPerIndent === prevIndent.indent) {
                             spacePerIndent = altSpacesPerIndent;
                             effectiveScope = nestLevel + 1;
@@ -216,8 +217,8 @@ define(function (require, exports, module) {
         } /* while */
         
         /* analyze the results. */
-        for (var k in map) {
-            if (map[k].samples > samples * 0.7) {
+        for (k in map) {
+            if (map.hasOwnProperty(k) && map[k].samples > samples * 0.7) {
                 PerfUtils.addMeasurement(sniffingTimer);
                 return map[k];
             }
@@ -318,41 +319,39 @@ define(function (require, exports, module) {
             
             /* skip lines with the same indentation as previous line,
              * and skip lines that are only whitespace. */
-            if (line[0] === prevIndent || line[1]) {
-                continue;
-            }
-            
-            if (line[0][0] === "\t") {
-                if ((line[0].length - prevIndent.length) > 0) {
-                    /* if the line starts with a tab, and it's an indentation
-                     * increase, record it as tab indent. */
-                    sampledLines++;
-                    tabLines++;
+            if (line[0] !== prevIndent && !line[1]) {
+                if (line[0][0] === "\t") {
+                    if ((line[0].length - prevIndent.length) > 0) {
+                        /* if the line starts with a tab, and it's an indentation
+                         * increase, record it as tab indent. */
+                        sampledLines++;
+                        tabLines++;
+                    }
+                } else {
+                    spaceDiff = line[0].length - prevIndent.length;
+                    if (spaceDiff > 0) {
+                        /* if the line starts with a space, determine the
+                         * indentation increase over the previous line, if any,
+                         * and record it. */
+                        sampledLines++;
+                        spaceLines++;
+                        spaceCounts[spaceDiff]++;
+                    }
                 }
-            } else {
-                spaceDiff = line[0].length - prevIndent.length;
-                if (spaceDiff > 0) {
-                    /* if the line starts with a space, determine the
-                     * indentation increase over the previous line, if any,
-                     * and record it. */
-                    sampledLines++;
-                    spaceLines++;
-                    spaceCounts[spaceDiff]++;
-                }
+                prevIndent = line[0];
             }
-            
-            prevIndent = line[0];
         }
         
         // Analyze the results.
-        var result = {'char': '', 'indent': 0, 'samples': 0};
+        var result = {'char': '', 'indent': 0, 'samples': 0},
+            ii;
         tabLines *= 2; // heuristic: the presence of lines starting with tabs is a stronger indication, so weight it double
-        if (tabLines > spaceLines) { 
+        if (tabLines > spaceLines) {
             result.char = '\t';
             result.samples = tabLines;
         } else if (spaceLines > tabLines) {
             result.char = ' ';
-            for (var ii = 1; ii <= 8; ii++) {
+            for (ii = 1; ii <= 8; ii++) {
                 if (spaceCounts[ii] >= result.samples) {
                     result.indent = ii;
                     result.samples = spaceCounts[ii];
@@ -371,7 +370,7 @@ define(function (require, exports, module) {
      * will do the rest.
      */
     function set(indent) {
-        PreferencesManager.set("useTabChar", (indent.char === '\t' ) ? true : false, _prefLocation);
+        PreferencesManager.set("useTabChar", (indent.char === '\t') ? true : false, _prefLocation);
         if (indent.char === ' ') {
             PreferencesManager.set("spaceUnits", indent.indent, _prefLocation);
         }
@@ -420,13 +419,13 @@ define(function (require, exports, module) {
     
     AppInit.htmlReady(function () {
         DocumentManager
-            .on("documentRefreshed.indent-right documentSaved.indent-right", function(e, doc) {
+            .on("documentRefreshed.indent-right documentSaved.indent-right", function (e, doc) {
                 if (doc === DocumentManager.getCurrentDocument()) {
                     run(doc);
                 }
             });
         MainViewManager
-            .on("currentFileChange.indent-right", function(e) {
+            .on("currentFileChange.indent-right", function (e) {
                 run();
             });
     });
