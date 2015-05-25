@@ -15,6 +15,8 @@ Tech bits
 
 This extension implements a simple parser capable of recognizing JavaScript syntax to the extent needed to capture indentation. The extension is quite performant: it takes around 70-90 milliseconds to complete the entire operation, of which the parser itself takes 1-5 milliseconds and the rest is the preferences and UI update.
 
+Nathan Vegdahl (github: @cessen) added a generic sniffing mechanism for the files which are not JavaScript.
+
 TODO
 ====
 
@@ -24,24 +26,29 @@ TODO
 History of changes
 ==================
 
-v.0.0.5
+v0.0.6
+-------
+- Get rid of deprecated subscription mechanisms and deprecated events.
+- Lint the extension code with both JSLint and JSHint.
+
+v0.0.5
 -------
 - Generic indent sniffing mechanism implemented by Nathan Vegdahl (github: @cessen)
 
-v.0.0.4
+v0.0.4
 -------
 - Integration with Brackets preferences management (>= Sprint 36)
 
-v.0.0.3
+v0.0.3
 -------
 - Fix a bug with not parsing the file on opening
 
-v.0.0.2
+v0.0.2
 -------
 - Recognize minified files
 - Parser improvements
 
-v.0.0.1
+v0.0.1
 -------
 - Initial implementation 
 
