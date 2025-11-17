@@ -1,3 +1,7 @@
+Repository is archived on November 17, 2025
+=======================================================================
+As Brackets editor has itself been archived, this repository, an extension to Brackets, is no longer is active development and is archived.
+
 Proper indent ([Brackets](https://github.com/adobe/brackets) extension)
 =======================================================================
 
